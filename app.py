@@ -3,9 +3,9 @@ from aiohttp import ClientSession
 import json
 
 from flask import Flask, request, jsonify
-from novel_extensions.LnReader import LnReader
-from manga_extensions.MnReader import MnReader
-from parser.parse import parse_query_to_dict
+from novel_extensions import LnReader
+from manga_extensions import MnReader
+from _parser import parse_query_to_dict
 from flask_cors import CORS
 
 app = Flask(__name__)
