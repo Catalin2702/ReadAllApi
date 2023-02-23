@@ -43,7 +43,7 @@ async def fetch(url):
 
 
 @app.route('/api/search', methods=['GET', 'POST'])
-async def requestNovel():
+async def search():
 	raw_params = request.query_string.decode()
 	params = parse_query_to_dict(raw_params)
 	readers = [reader['obj'](params, reader['url']+reader['search_url'], reader['content_type']) for reader in reader_mapping]
@@ -54,7 +54,7 @@ async def requestNovel():
 
 
 @app.route('/api/get_chapter', methods=['GET', 'POST'])
-def requestNovelChapter():
+def get_chapters():
 	params = request.query_string.decode()
 	params = parse_query_to_dict(params)
 	reader = [reader['obj'](url=params.get('query'), content_type=params.get('content_type')) for reader in reader_mapping if reader['url'] in params.get('query')][0]
@@ -63,7 +63,7 @@ def requestNovelChapter():
 
 @app.route('/api/get_content/novel', methods=['GET', 'POST'])
 @app.route('/api/get_content/manga', methods=['GET', 'POST'])
-def requestNovelContent():
+def get_content():
 	raw_params = request.query_string.decode()
 	params = parse_query_to_dict(raw_params)
 	reader = [reader['obj'](url=params.get('query'), content_type=params.get('content_type')) for reader in reader_mapping if reader['reader_url'] in params.get('query')][0]
