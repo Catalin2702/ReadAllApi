@@ -18,10 +18,14 @@ class MnReader(TemplateReader):
 		async with ClientSession() as session:
 			async with session.get(url) as response:
 				results = await response.json()
-				return [{**result, 'type': self.content_type} for result in results.get('results')]
+				if len(results) == 0:
+					self.response = {}
+				else:
+					self.response = [{**result, 'type': self.content_type} for result in results.get('results')]
+			return self.response
 
 	def _get_chapters(self):
-		response = requests.get(url=self.params.get('query'))
+		response = requests.get(self.url)
 		if response.status_code == 200:
 			soup = BeautifulSoup(response.text, 'html.parser')
 			soup = soup.find_all(id=re.compile("^cmtb-"))
@@ -36,7 +40,7 @@ class MnReader(TemplateReader):
 		return self.response
 
 	def _get_content(self):
-		response = requests.get(url=self.params.get('query'))
+		response = requests.get(self.url)
 		if response.status_code == 200:
 			soup = BeautifulSoup(response.text, 'html.parser')
 			soup_div = soup.find('div', {'class': 'chapter-detail-novel-big-image'})

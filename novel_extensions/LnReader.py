@@ -1,35 +1,31 @@
 import requests
+from aiohttp import ClientSession
 from bs4 import BeautifulSoup
 import re
 from urllib.parse import unquote
 
+from template_extensions import TemplateReader
 
-class LnReader:
 
-	params = {}
-	response = {}
-	url = 'https://lnreader.org/search/autocomplete?'
+class LnReader(TemplateReader):
 
-	def __init__(self, params: dict):
-		self.params = params
-
-	def __get_title(self):
+	async def _get_title(self):
 		data = {
 			'query': unquote(self.params.get('query')),
 			'dataType': 'json'
 		}
-		response = requests.get(url=self.url, params=data)
-		if response.status_code == 200 and len(response.json()) > 0:
-			self.response = response.json().get('results')
-			for res in self.response:
-				res['type'] = 'novel'
-
-	def get_title(self):
-		self.__get_title()
+		url = self.url + '&'.join([f"{key}={value}" for key, value in data.items()])
+		async with ClientSession() as session:
+			async with session.get(url) as response:
+				results = await response.json()
+				if len(results) == 0:
+					self.response = {}
+				else:
+					self.response = [{**result, 'type': self.content_type} for result in results.get('results')]
 		return self.response
 
-	def __get_chapters(self):
-		response = requests.get(url=self.params.get('query'))
+	def _get_chapters(self):
+		response = requests.get(self.url)
 		if response.status_code == 200:
 			soup = BeautifulSoup(response.text, 'html.parser')
 			soup = soup.find_all(id=re.compile("^cmtb-"))
@@ -39,13 +35,12 @@ class LnReader:
 				for s in so:
 					soup_dict[s.get_text().strip()] = s['href']
 			self.response = soup_dict
-
-	def get_chapters(self):
-		self.__get_chapters()
+		else:
+			self.response = {}
 		return self.response
 
-	def __get_content(self):
-		response = requests.get(url=self.params.get('query'))
+	def _get_content(self):
+		response = requests.get(self.url)
 		if response.status_code == 200:
 			soup = BeautifulSoup(response.text, 'html.parser')
 			soup_p = soup.find('div', {'id': 'chapterText'})
@@ -55,9 +50,7 @@ class LnReader:
 			for x in soup_p:
 				if any(c.isalpha() for c in x.text) and not any(exclude in str(x.text) for exclude in excluded_content):
 					paragraphs.append(x.text)
-
 			self.response = paragraphs
-
-	def get_content(self):
-		self.__get_content()
+		else:
+			self.response = {}
 		return self.response

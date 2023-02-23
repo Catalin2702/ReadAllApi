@@ -1,11 +1,13 @@
 class TemplateReader:
 
-	params = {}
-	response = {}
-	url = ''
-	content_type = ''
+	params = None
+	response = None
+	url = None
+	content_type = None
 
-	def __init__(self, params: dict, url: str, content_type: str):
+	def __init__(self, params=None, url=None, content_type=None):
+		if params is None:
+			params = {}
 		self.params = params
 		self.url = url
 		self.content_type = content_type
