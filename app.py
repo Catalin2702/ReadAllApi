@@ -12,15 +12,18 @@ app = Flask(__name__)
 CORS(app)
 CORS(app, resources={r"/*": {"origins": "*"}}, methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
-path_mapping = {
-	'novel': LnReader,
-	'manga': MnReader,
-	'manhwa': MnReader
-}
 
-urls = [
-	'https://lnreader.org/search/autocomplete?{}',
-	'https://readmanga.app/search/autocomplete?{}'
+reader_mapping = [
+	# {
+	# 	'url': 'https://lnreader.org/search/autocomplete?',
+	# 	'content_type': 'novel',
+	# 	'obj': LnReader
+	# },
+	{
+		'url': 'https://readmanga.app/search/autocomplete?',
+		'content_type': 'manhwa',
+		'obj': MnReader
+	}
 ]
 
 
@@ -35,22 +38,36 @@ async def fetch(url):
 			return [{**result, 'type': content_type} for result in results.get('results')]
 
 
-@app.route('/api/search', methods=['GET', 'POST'])
-async def asyncRequestNovel():
-	params = request.query_string.decode()
-	params = parse_query_to_dict(params)
-	coroutines = [fetch(url.format('&'.join([f"{key}={value}" for key, value in params.items()]))) for url in urls]
+# @app.route('/api/search', methods=['GET', 'POST'])
+# async def asyncRequestNovel():
+# 	params = request.query_string.decode()
+# 	params = parse_query_to_dict(params)
+# 	coroutines = [fetch(url.format('&'.join([f"{key}={value}" for key, value in params.items()]))) for url in urls]
+# 	results = await asyncio.gather(*coroutines)
+# 	results = [result for results_from_url in results for result in results_from_url]
+# 	return jsonify(results)
+
+@app.route('/api/search/novel', methods=['GET', 'POST'])
+@app.route('/api/search/manga', methods=['GET', 'POST'])
+async def requestNovel():
+	raw_params = request.query_string.decode()
+	params = parse_query_to_dict(raw_params)
+	readers = [reader['obj'](params, reader['url'], reader['content_type']) for reader in reader_mapping]
+	coroutines = [reader.get_title() for reader in readers]
 	results = await asyncio.gather(*coroutines)
 	results = [result for results_from_url in results for result in results_from_url]
 	return jsonify(results)
+	# content_type = request.path.split('/')[3]
+	# reader = path_mapping[content_type](params, urls[1], 'manhwa')
+	# ln = reader
+	# return json.dumps(reader.get_title())
 
 
 @app.route('/api/get_chapter', methods=['GET', 'POST'])
 def requestNovelChapter():
 	params = request.query_string.decode()
 	params = parse_query_to_dict(params)
-	print(params)
-	reader = path_mapping[params.get('content_type')](params)
+	reader = reader_mapping[params.get('content_type')](params)
 	return json.dumps(reader.get_chapters())
 
 
@@ -59,7 +76,7 @@ def requestNovelChapter():
 def requestNovelContent():
 	raw_params = request.query_string.decode()
 	params = parse_query_to_dict(raw_params)
-	reader = path_mapping[params.get('content_type')](params)
+	reader = reader_mapping[params.get('content_type')](params)
 	return json.dumps(reader.get_content())
 
 

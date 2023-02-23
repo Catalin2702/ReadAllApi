@@ -1,34 +1,26 @@
 import requests
+from aiohttp import ClientSession
 from bs4 import BeautifulSoup
 import re
 from urllib.parse import unquote
 
+from template_extensions import TemplateReader
 
-class MnReader:
 
-	params = {}
-	response = {}
-	url = 'https://readmanga.app/search/autocomplete?'
+class MnReader(TemplateReader):
 
-	def __init__(self, params: dict):
-		self.params = params
-
-	def __get_title(self):
+	async def _get_title(self):
 		data = {
 			'query': unquote(self.params.get('query')),
 			'dataType': 'json'
 		}
-		response = requests.get(url=self.url, params=data)
-		if response.status_code == 200 and len(response.json()) > 0:
-			self.response = response.json().get('results')
-			for res in self.response:
-				res['type'] = 'Manhwa'
+		url = self.url+'&'.join([f"{key}={value}" for key,value in data.items()])
+		async with ClientSession() as session:
+			async with session.get(url) as response:
+				results = await response.json()
+				return [{**result, 'type': self.content_type} for result in results.get('results')]
 
-	def get_title(self):
-		self.__get_title()
-		return self.response
-
-	def __get_chapters(self):
+	def _get_chapters(self):
 		response = requests.get(url=self.params.get('query'))
 		if response.status_code == 200:
 			soup = BeautifulSoup(response.text, 'html.parser')
@@ -39,12 +31,11 @@ class MnReader:
 				for s in so:
 					soup_dict[s.get_text().strip()] = s['href']
 			self.response = soup_dict
-
-	def get_chapters(self):
-		self.__get_chapters()
+		else:
+			self.response = {}
 		return self.response
 
-	def __get_content(self):
+	def _get_content(self):
 		response = requests.get(url=self.params.get('query'))
 		if response.status_code == 200:
 			soup = BeautifulSoup(response.text, 'html.parser')
@@ -52,7 +43,6 @@ class MnReader:
 			soup_img = soup_div.find_all('img')
 			soup_img = [img['src'] for img in soup_img]
 			self.response = soup_img
-
-	def get_content(self):
-		self.__get_content()
+		else:
+			self.response = {}
 		return self.response
