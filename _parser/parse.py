@@ -1,6 +1,3 @@
-from urllib import parse
-
-
 def parse_query_to_dict(string_raw):
 	list_of_string = string_raw.split('&')
 	dict_to_return = {}
