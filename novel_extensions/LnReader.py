@@ -21,7 +21,8 @@ class LnReader(TemplateReader):
 				if len(results) == 0:
 					self.response = {}
 				else:
-					self.response = [{**result, 'type': self.content_type} for result in results.get('results')]
+					self.response = [{**result, 'type': self.content_type} for result in results.get('results')
+									 if data['query'].lower() in result['original_title'].lower()]
 		return self.response
 
 	def _get_chapters(self):

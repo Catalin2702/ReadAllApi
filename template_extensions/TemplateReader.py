@@ -1,5 +1,4 @@
 class TemplateReader:
-
 	params = None
 	response = None
 	url = None

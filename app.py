@@ -12,7 +12,6 @@ app = Flask(__name__)
 CORS(app)
 CORS(app, resources={r"/*": {"origins": "*"}}, methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
-
 reader_mapping = [
 	{
 		'url': 'https://lnreader.org',
@@ -46,7 +45,8 @@ async def fetch(url):
 async def search():
 	raw_params = request.query_string.decode()
 	params = parse_query_to_dict(raw_params)
-	readers = [reader['obj'](params, reader['url']+reader['search_url'], reader['content_type']) for reader in reader_mapping]
+	readers = [reader['obj'](params, reader['url'] + reader['search_url'], reader['content_type'])
+			   	for reader in reader_mapping]
 	coroutines = [reader.get_title() for reader in readers]
 	results = await asyncio.gather(*coroutines)
 	results = [result for results_from_url in results for result in results_from_url]
@@ -57,7 +57,8 @@ async def search():
 def get_chapters():
 	params = request.query_string.decode()
 	params = parse_query_to_dict(params)
-	reader = [reader['obj'](url=params.get('query'), content_type=params.get('content_type')) for reader in reader_mapping if reader['url'] in params.get('query')][0]
+	reader = [reader['obj'](url=params.get('query'), content_type=params.get('content_type'))
+	 			for reader in reader_mapping if reader['url'] in params.get('query')][0]
 	return json.dumps(reader.get_chapters())
 
 
@@ -66,7 +67,8 @@ def get_chapters():
 def get_content():
 	raw_params = request.query_string.decode()
 	params = parse_query_to_dict(raw_params)
-	reader = [reader['obj'](url=params.get('query'), content_type=params.get('content_type')) for reader in reader_mapping if reader['reader_url'] in params.get('query')][0]
+	reader = [reader['obj'](url=params.get('query'), content_type=params.get('content_type'))
+			  	for reader in reader_mapping if reader['reader_url'] in params.get('query')][0]
 	return json.dumps(reader.get_content())
 
 

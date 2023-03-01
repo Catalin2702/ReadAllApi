@@ -14,14 +14,15 @@ class MnReader(TemplateReader):
 			'query': unquote(self.params.get('query')),
 			'dataType': 'json'
 		}
-		url = self.url+'&'.join([f"{key}={value}" for key,value in data.items()])
+		url = self.url + '&'.join([f"{key}={value}" for key, value in data.items()])
 		async with ClientSession() as session:
 			async with session.get(url) as response:
 				results = await response.json()
 				if len(results) == 0:
 					self.response = {}
 				else:
-					self.response = [{**result, 'type': self.content_type} for result in results.get('results')]
+					self.response = [{**result, 'type': self.content_type} for result in results.get('results')
+									 if data['query'].lower() in result['original_title'].lower()]
 			return self.response
 
 	def _get_chapters(self):
