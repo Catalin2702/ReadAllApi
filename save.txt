@@ -1,0 +1,28 @@
+from flask import Flask
+# from time import sleep
+import requests
+from bs4 import BeautifulSoup as bs
+from pprint import pprint
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}}, methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
+
+
+@app.route('/api/')
+def hello_world():  # put application's code here
+	url = 'https://lnreader.org/search/autocomplete'
+	response = requests.get(url)
+	html = bs(response.text, 'html.parser')
+	p = html.find_all('p')
+	paragraphs = []
+	excluded_content = ['Sponsored Content', 'Read novel online free.']
+	for x in p:
+		if not any(exclude in str(x) for exclude in excluded_content):
+			paragraphs.append(str(x))
+	return paragraphs
+
+
+if __name__ == '__main__':
+	app.run()
